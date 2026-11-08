@@ -42,7 +42,7 @@ h2 { font-size:20px; margin:34px 0 14px; padding-bottom:8px; border-bottom:1px s
     <p class="eyebrow">vLLM × LMCache</p>
     <h1>LLM 推理架构图解</h1>
     <p class="lede">执行引擎与 KV 缓存层的核心框架:连续批处理、PagedAttention、前缀缓存,以及 LMCache 的分层 KV 复用、加载与写回。</p>
-    <p class="meta">6 张交互图 · 源码基线 vLLM <code>c724bb3</code> / LMCache <code>a4a6888</code> · 图由 Archify 生成</p>
+    <p class="meta">7 张交互图 · 源码基线 vLLM <code>c724bb3</code> / LMCache <code>a4a6888</code> · 图由 Archify 生成</p>
   </section>
 
   <h2>vLLM:执行引擎</h2>
@@ -90,6 +90,12 @@ h2 { font-size:20px; margin:34px 0 14px; padding-bottom:8px; border-bottom:1px s
       <p>本地前缀命中、LMCache 外部命中、未命中重算;异步加载与写回。</p>
       <div class="preview"><iframe src="./vllm-lmcache-integration.html" loading="lazy" title="vLLM + LMCache 联合链路"></iframe></div>
       <a class="open" href="./vllm-lmcache-integration.html" target="_blank" rel="noopener">打开交互图 ↗</a>
+    </article>
+    <article class="card">
+      <div class="card-head"><h3>超长会话 KV 生命周期</h3><span class="badge">时序图</span></div>
+      <p>首次请求在 GPU 建 KV → store_kv → L1/L2 NVMe → 二次请求命中 → 回载 GPU 续算。</p>
+      <div class="preview"><iframe src="./vllm-lmcache-long-session.html" loading="lazy" title="超长会话 KV 生命周期"></iframe></div>
+      <a class="open" href="./vllm-lmcache-long-session.html" target="_blank" rel="noopener">打开交互图 ↗</a>
     </article>
   </div>
 </main>

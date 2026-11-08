@@ -1,0 +1,297 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "超长会话:KV 的创建、下沉与命中回载",
+    "locale": "zh-CN",
+    "output": "site/vllm-lmcache-long-session.html",
+    "quality_profile": "showcase"
+  },
+  "participants": [
+    {
+      "id": "user",
+      "type": "external",
+      "label": "用户 / 会话",
+      "sublabel": "多轮 prompt"
+    },
+    {
+      "id": "vllm",
+      "type": "backend",
+      "label": "vLLM Engine",
+      "sublabel": "add_request"
+    },
+    {
+      "id": "sched",
+      "type": "backend",
+      "label": "Scheduler",
+      "sublabel": "KVManager / 批处理"
+    },
+    {
+      "id": "gpu",
+      "type": "backend",
+      "label": "GPU Paged KV",
+      "sublabel": "HBM + block table"
+    },
+    {
+      "id": "connector",
+      "type": "backend",
+      "label": "KV Connector",
+      "sublabel": "LMCache 接入"
+    },
+    {
+      "id": "lm",
+      "type": "backend",
+      "label": "LMCache MP",
+      "sublabel": "lookup / transfer"
+    },
+    {
+      "id": "l1",
+      "type": "database",
+      "label": "L1 DRAM",
+      "sublabel": "CPU / DEVDAX / GDS"
+    },
+    {
+      "id": "l2",
+      "type": "database",
+      "label": "L2 NVMe SSD",
+      "sublabel": "fs / raw block"
+    }
+  ],
+  "segments": [
+    {
+      "from": 150,
+      "to": 340,
+      "label": "① 首次请求:GPU 建立 KV"
+    },
+    {
+      "from": 350,
+      "to": 620,
+      "label": "② store_kv:GPU → L1 → L2"
+    },
+    {
+      "from": 630,
+      "to": 960,
+      "label": "③ 后续请求:lookup 命中"
+    },
+    {
+      "from": 970,
+      "to": 1380,
+      "label": "④ 原路回载:L2 → L1 → GPU"
+    }
+  ],
+  "messages": [
+    {
+      "id": "submit1",
+      "from": "user",
+      "to": "vllm",
+      "y": 170,
+      "label": "提交超长会话",
+      "note": "多轮前缀",
+      "variant": "emphasis"
+    },
+    {
+      "id": "req1",
+      "from": "vllm",
+      "to": "sched",
+      "y": 215,
+      "label": "add_request → schedule"
+    },
+    {
+      "id": "prefill",
+      "from": "sched",
+      "to": "gpu",
+      "y": 265,
+      "label": "allocate_slots + prefill",
+      "note": "KV 写入 HBM,建 block table"
+    },
+    {
+      "id": "kv1",
+      "from": "gpu",
+      "to": "sched",
+      "y": 320,
+      "label": "新 KV / logits",
+      "variant": "return"
+    },
+    {
+      "id": "save",
+      "from": "sched",
+      "to": "connector",
+      "y": 370,
+      "label": "wait_for_save()",
+      "note": "store_kv:KV producer + 完整 chunk"
+    },
+    {
+      "id": "store",
+      "from": "connector",
+      "to": "lm",
+      "y": 430,
+      "label": "store(chunks)",
+      "variant": "dashed"
+    },
+    {
+      "id": "l1write",
+      "from": "lm",
+      "to": "l1",
+      "y": 480,
+      "label": "写入 L1",
+      "note": "GPU → CPU 拷贝"
+    },
+    {
+      "id": "tier",
+      "from": "l1",
+      "to": "l2",
+      "y": 530,
+      "label": "eviction / write policy",
+      "note": "异步下沉到 NVMe",
+      "variant": "dashed"
+    },
+    {
+      "id": "saved",
+      "from": "lm",
+      "to": "connector",
+      "y": 590,
+      "label": "store complete",
+      "variant": "return"
+    },
+    {
+      "id": "submit2",
+      "from": "user",
+      "to": "vllm",
+      "y": 650,
+      "label": "再次请求(同前缀)",
+      "note": "多轮 / 新请求",
+      "variant": "emphasis"
+    },
+    {
+      "id": "req2",
+      "from": "vllm",
+      "to": "sched",
+      "y": 695,
+      "label": "schedule"
+    },
+    {
+      "id": "ask",
+      "from": "sched",
+      "to": "connector",
+      "y": 745,
+      "label": "get_num_new_matched_tokens()",
+      "note": "本地 prefix 未命中"
+    },
+    {
+      "id": "lookup",
+      "from": "connector",
+      "to": "lm",
+      "y": 800,
+      "label": "lookup(key)"
+    },
+    {
+      "id": "place",
+      "from": "lm",
+      "to": "l2",
+      "y": 845,
+      "label": "查 placement",
+      "note": "KeyDirectory"
+    },
+    {
+      "id": "hit",
+      "from": "l2",
+      "to": "lm",
+      "y": 900,
+      "label": "hit(L2)",
+      "variant": "return"
+    },
+    {
+      "id": "matched",
+      "from": "lm",
+      "to": "connector",
+      "y": 950,
+      "label": "matched tokens",
+      "variant": "return"
+    },
+    {
+      "id": "answer",
+      "from": "connector",
+      "to": "sched",
+      "y": 1000,
+      "label": "(num_hit, async)",
+      "variant": "return"
+    },
+    {
+      "id": "load",
+      "from": "sched",
+      "to": "connector",
+      "y": 1050,
+      "label": "start_load_kv()",
+      "variant": "emphasis"
+    },
+    {
+      "id": "retrieve",
+      "from": "connector",
+      "to": "lm",
+      "y": 1100,
+      "label": "retrieve",
+      "variant": "dashed"
+    },
+    {
+      "id": "read",
+      "from": "lm",
+      "to": "l2",
+      "y": 1150,
+      "label": "read NVMe",
+      "variant": "dashed"
+    },
+    {
+      "id": "stage",
+      "from": "l2",
+      "to": "l1",
+      "y": 1200,
+      "label": "stage to L1"
+    },
+    {
+      "id": "topaged",
+      "from": "l1",
+      "to": "gpu",
+      "y": 1250,
+      "label": "写入 paged KV",
+      "note": "异步,与 forward 重叠"
+    },
+    {
+      "id": "forward",
+      "from": "sched",
+      "to": "gpu",
+      "y": 1310,
+      "label": "forward(未命中部分)",
+      "variant": "emphasis"
+    },
+    {
+      "id": "out",
+      "from": "gpu",
+      "to": "user",
+      "y": 1360,
+      "label": "流式输出",
+      "variant": "return"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "amber",
+      "title": "store_kv 的触发条件",
+      "items": [
+        "请求是 KV producer(kv_transfer_config.is_kv_producer)",
+        "prompt chunk 已完整计算(通常按块/ chunk 对齐)",
+        "forward 退出前的 wait_for_save() 提交 STORE",
+        "decode 生成的 token 默认不存;save_decode_cache=True 才存"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "命中与回载条件",
+      "items": [
+        "block hash、模型、block size、cache salt 一致",
+        "Lookup/KeyDirectory 能找到 L1 或 L2 placement",
+        "vLLM 把外部命中计入 num_computed_tokens",
+        "最后一个 token 通常仍需重算以取 logits"
+      ]
+    }
+  ]
+}

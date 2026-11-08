@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "a8b66720-9b9f-48b9-bee3-1af9cef632d2",
+  "status": "current",
+  "command": "deliver",
+  "type": "sequence",
+  "input": "/tmp/opencode/llm-arch-dia-repo/.archify/sequence-vllm-lmcache-long-session/candidate.json",
+  "output": "/tmp/opencode/llm-arch-dia-repo/site/vllm-lmcache-long-session.html",
+  "specification": {
+    "sha256": "25f38febeeb0fe3cbb07b16dac4d1082b77ed6cd20647c9f80ee448ac31073af",
+    "bytes": 6217
+  },
+  "artifact": {
+    "sha256": "d9b8dc2fa92db65c38b6ff5d1311eb2e34657823551d88572ab0ad0fcb7bfd58",
+    "bytes": 852046
+  }
+}
