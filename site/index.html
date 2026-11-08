@@ -43,7 +43,7 @@ a:hover { text-decoration: none; }
   border-bottom: 1px solid var(--border);
 }
 .topbar-inner {
-  max-width: 1220px; margin: 0 auto; padding: 12px 24px;
+  max-width: min(1800px, 96vw); margin: 0 auto; padding: 12px clamp(20px, 4vw, 64px);
   display: flex; align-items: center; gap: 18px;
 }
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; letter-spacing: .01em; color: var(--text); }
@@ -66,7 +66,7 @@ a:hover { text-decoration: none; }
 .ghost:hover { color: var(--text); border-color: var(--border-strong); }
 
 /* hero */
-main { max-width: 1220px; margin: 0 auto; padding: 0 24px 70px; }
+main { max-width: min(1800px, 96vw); margin: 0 auto; padding: 0 clamp(20px, 4vw, 64px) 70px; }
 .hero { padding: 76px 0 36px; position: relative; }
 .eyebrow {
   color: var(--muted); font-size: 12px; letter-spacing: .22em; text-transform: uppercase;
